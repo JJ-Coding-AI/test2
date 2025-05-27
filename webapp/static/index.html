@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>日英単語帳</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .card {
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .word {
+            font-size: 2em;
+        }
+        .meaning {
+            margin-top: 20px;
+            font-size: 1.5em;
+            display: none;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div id="word" class="word">読み込み中...</div>
+    <div id="meaning" class="meaning"></div>
+    <div>
+        <button id="prev">前の単語</button>
+        <button id="next">次の単語</button>
+        <button id="show">意味を表示</button>
+    </div>
+</div>
+<script>
+const WORDS = [
+    {word: "挨拶", meaning: "greeting"},
+    {word: "経済", meaning: "economy"},
+    {word: "文化", meaning: "culture"},
+    {word: "教育", meaning: "education"},
+    {word: "技術", meaning: "technology"},
+    {word: "研究", meaning: "research"},
+    {word: "旅行", meaning: "travel"},
+    {word: "健康", meaning: "health"},
+    {word: "社会", meaning: "society"},
+    {word: "環境", meaning: "environment"}
+];
+let history = [];
+let index = -1;
+
+function pickRandom() {
+    return WORDS[Math.floor(Math.random() * WORDS.length)];
+}
+
+function loadWord() {
+    const data = pickRandom();
+    if (index < history.length - 1) {
+        history = history.slice(0, index + 1);
+    }
+    history.push(data);
+    index++;
+    showCurrent();
+}
+
+function showCurrent() {
+    const data = history[index];
+    document.getElementById('word').textContent = data.word;
+    document.getElementById('meaning').style.display = 'none';
+    document.getElementById('meaning').textContent = data.meaning;
+}
+
+document.getElementById('next').onclick = loadWord;
+document.getElementById('prev').onclick = () => {
+    if (index > 0) {
+        index--;
+        showCurrent();
+    }
+};
+document.getElementById('show').onclick = () => {
+    document.getElementById('meaning').style.display = 'block';
+};
+
+loadWord();
+</script>
+</body>
+</html>
