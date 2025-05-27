@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>英単語学習</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #meaning { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>英単語学習アプリ</h1>
+<p id="word">Loading...</p>
+<button id="next">次の単語</button>
+<button id="show">意味を表示</button>
+<p id="meaning" style="display:none;"></p>
+<script>
+const WORDS = [
+    { word: 'abandon', meaning: '\u653e\u68c4\u3059\u308b' },
+    { word: 'benefit', meaning: '\u5229\u76ca' },
+    { word: 'candidate', meaning: '\u5bfe\u8a71\u8005; \u5019\u88dc' },
+    { word: 'debate', meaning: '\u8a55\u8ad6; \u8ad6\u4e89' },
+    { word: 'efficient', meaning: '\u52b9\u7387\u7684\u306a' }
+];
+
+function loadWord() {
+    const data = WORDS[Math.floor(Math.random() * WORDS.length)];
+    window.currentWord = data;
+    document.getElementById('word').textContent = data.word;
+    document.getElementById('meaning').style.display = 'none';
+    document.getElementById('meaning').textContent = data.meaning;
+}
+
+document.getElementById('next').onclick = loadWord;
+
+document.getElementById('show').onclick = () => {
+    document.getElementById('meaning').style.display = 'block';
+};
+
+loadWord();
+</script>
+</body>
+</html>
