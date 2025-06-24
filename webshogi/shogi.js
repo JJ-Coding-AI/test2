@@ -145,6 +145,7 @@ function onHandClick(e){
   if(owner!==currentPlayer) return;
   selected={piece,owner};
   highlightDrops(piece,owner);
+  showMessage('盤面をクリックして置きます');
 }
 
 function onDragStart(e){
