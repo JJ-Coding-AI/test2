@@ -10,6 +10,7 @@ let board = [];
 let hands = [{}, {}]; // piece counts
 let currentPlayer = 0; // 0: gote (bottom), 1: sente (top)
 let selected = null; // {x,y} or {piece:'P'} for drop
+let dragged = null;
 
 function initBoard() {
   board = [
@@ -37,8 +38,13 @@ function render() {
       if (piece) {
         cell.textContent = PIECES[piece.t] || piece.t;
         if (piece.p===1) cell.style.transform='rotate(180deg)';
+        if(piece.p===currentPlayer) cell.setAttribute('draggable','true');
       }
       cell.addEventListener('click', onSquareClick);
+      cell.addEventListener('dragstart', onDragStart);
+      cell.addEventListener('dragover', onDragOver);
+      cell.addEventListener('drop', onDrop);
+      cell.addEventListener('dragend', onDragEnd);
       boardElement.appendChild(cell);
     }
   }
@@ -51,6 +57,8 @@ function render() {
         span.textContent=PIECES[pt]+'('+count+')';
         span.dataset.piece=pt; span.dataset.owner=i;
         span.addEventListener('click', onHandClick);
+        span.setAttribute('draggable','true');
+        span.addEventListener('dragstart', onDragStart);
         el.appendChild(span);
       }
     }
@@ -103,10 +111,14 @@ function onSquareClick(e){
       // drop from hand
       if(moveDrop(x,y,selected.piece,selected.owner)){
         selected=null; render();
+      }else{
+        showMessage('そこには移動できません');
       }
     } else {
       if(movePiece(selected.x,selected.y,x,y)){
         selected=null; render();
+      }else{
+        showMessage('そこには移動できません');
       }
     }
   } else {
@@ -124,6 +136,55 @@ function onHandClick(e){
   if(owner!==currentPlayer) return;
   selected={piece,owner};
   highlightDrops(piece,owner);
+}
+
+function onDragStart(e){
+  const x=e.currentTarget.dataset.x;
+  const y=e.currentTarget.dataset.y;
+  if(x!==undefined){
+    const piece=board[y][x];
+    if(!piece||piece.p!==currentPlayer){e.preventDefault();return;}
+    dragged={type:'move',x:parseInt(x),y:parseInt(y)};
+    highlightMoves(legalMoves(dragged.x,dragged.y,piece));
+  }else{
+    const pieceType=e.currentTarget.dataset.piece;
+    const owner=parseInt(e.currentTarget.dataset.owner);
+    if(owner!==currentPlayer){e.preventDefault();return;}
+    dragged={type:'drop',piece:pieceType,owner};
+    highlightDrops(pieceType,owner);
+  }
+}
+
+function onDragOver(e){
+  e.preventDefault();
+}
+
+function onDrop(e){
+  e.preventDefault();
+  const x=parseInt(e.currentTarget.dataset.x);
+  const y=parseInt(e.currentTarget.dataset.y);
+  let ok=false;
+  if(dragged){
+    if(dragged.type==='move'){
+      ok=movePiece(dragged.x,dragged.y,x,y);
+    }else{
+      ok=moveDrop(x,y,dragged.piece,dragged.owner);
+    }
+  }
+  dragged=null;
+  selected=null;
+  if(ok){
+    clearHighlights();
+    render();
+  }else{
+    showMessage('そこには移動できません');
+    clearHighlights();
+  }
+}
+
+function onDragEnd(){
+  dragged=null;
+  clearHighlights();
 }
 
 function highlightMoves(moves){
@@ -201,6 +262,16 @@ function shouldPromote(piece,ty){
 function promote(piece){
   const map={P:'PP',L:'PL',N:'PN',S:'PS',B:'PB',R:'PR'};
   piece.t=map[piece.t]||piece.t;
+}
+
+function showMessage(msg){
+  const el=document.getElementById('message');
+  if(el){
+    el.textContent=msg;
+    setTimeout(()=>{el.textContent='';},1500);
+  }else{
+    alert(msg);
+  }
 }
 
 initBoard();
