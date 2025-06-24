@@ -229,6 +229,15 @@ function movePiece(sx,sy,tx,ty){
   if(!moves.some(m=>m.x===tx && m.y===ty)) return false;
   const target=board[ty][tx];
   if(target){
+    if(target.t==='K'){
+      board[sy][sx]=null;
+      board[ty][tx]=piece;
+      showMessage(currentPlayer===0?'先手の勝ち！':'後手の勝ち！');
+      initBoard();
+      currentPlayer=0;
+      render();
+      return true;
+    }
     let base = target.t;
     if(base.length>1 && base.startsWith('P')) base = base.slice(1); // demote
     hands[currentPlayer][base] = (hands[currentPlayer][base] || 0) + 1;
