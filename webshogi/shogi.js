@@ -1,6 +1,8 @@
 const boardElement = document.getElementById('board');
 const handElements = [document.getElementById('hand0'), document.getElementById('hand1')];
 const turnElement = document.getElementById('turn');
+const undoButton = document.getElementById('undo');
+if (undoButton) undoButton.addEventListener('click', undoMove);
 
 const PIECES = {
   P: '歩', L: '香', N: '桂', S: '銀', G: '金', B: '角', R: '飛', K: '王',
@@ -12,6 +14,21 @@ let hands = [{}, {}]; // piece counts
 let currentPlayer = 0; // 0: 先手(bottom), 1: 後手(top)
 let selected = null; // {x,y} or {piece:'P'} for drop
 let dragged = null;
+let history = [];
+
+function saveState() {
+  history.push(JSON.parse(JSON.stringify({board, hands, currentPlayer})));
+}
+
+function undoMove() {
+  if (history.length <= 1) return;
+  history.pop();
+  const state = history[history.length-1];
+  board = JSON.parse(JSON.stringify(state.board));
+  hands = JSON.parse(JSON.stringify(state.hands));
+  currentPlayer = state.currentPlayer;
+  render();
+}
 
 function initBoard() {
   board = [
@@ -234,9 +251,7 @@ function movePiece(sx,sy,tx,ty){
       board[sy][sx]=null;
       board[ty][tx]=piece;
       showMessage(currentPlayer===0?'先手の勝ち！':'後手の勝ち！');
-      initBoard();
-      currentPlayer=0;
-      render();
+      startGame();
       return true;
     }
     let base = target.t;
@@ -251,6 +266,12 @@ function movePiece(sx,sy,tx,ty){
     }
   }
   currentPlayer=1-currentPlayer;
+  if(isCheckmated(currentPlayer)){
+    showMessage(currentPlayer===0?'後手の勝ち！':'先手の勝ち！');
+    startGame();
+  }else{
+    saveState();
+  }
   return true;
 }
 
@@ -260,6 +281,12 @@ function moveDrop(x,y,pt,owner){
   board[y][x]={t:pt,p:owner};
   hands[owner][pt]--;
   currentPlayer=1-currentPlayer;
+  if(isCheckmated(currentPlayer)){
+    showMessage(currentPlayer===0?'後手の勝ち！':'先手の勝ち！');
+    startGame();
+  }else{
+    saveState();
+  }
   return true;
 }
 
@@ -269,6 +296,91 @@ function pawnExists(player,x){
     if(p && p.p===player && p.t==='P') return true;
   }
   return false;
+}
+
+function findKing(player){
+  for(let y=0;y<9;y++){
+    for(let x=0;x<9;x++){
+      const p=board[y][x];
+      if(p && p.p===player && p.t==='K') return {x,y};
+    }
+  }
+  return null;
+}
+
+function isInCheck(player){
+  const king=findKing(player);
+  if(!king) return true;
+  const enemy=1-player;
+  for(let y=0;y<9;y++){
+    for(let x=0;x<9;x++){
+      const p=board[y][x];
+      if(p && p.p===enemy){
+        const moves=legalMoves(x,y,p);
+        if(moves.some(m=>m.x===king.x && m.y===king.y)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function isCheckmated(player){
+  if(!isInCheck(player)) return false;
+  // try all moves
+  for(let y=0;y<9;y++){
+    for(let x=0;x<9;x++){
+      const piece=board[y][x];
+      if(piece && piece.p===player){
+        const moves=legalMoves(x,y,piece);
+        for(const m of moves){
+          const captured=board[m.y][m.x];
+          board[y][x]=null;
+          board[m.y][m.x]=piece;
+          let capCount;
+          let base;
+          if(captured){
+            base=captured.t;
+            if(base.startsWith('P')) base=base.slice(1);
+            capCount=hands[player][base]||0;
+            hands[player][base]=capCount+1;
+          }
+          const chk=isInCheck(player);
+          board[y][x]=piece;
+          board[m.y][m.x]=captured;
+          if(captured){
+            hands[player][base]=capCount;
+          }
+          if(!chk) return false;
+        }
+      }
+    }
+  }
+  // drops
+  for(const [pt,count] of Object.entries(hands[player])){
+    if(count>0){
+      for(let y=0;y<9;y++){
+        for(let x=0;x<9;x++){
+          if(board[y][x]) continue;
+          if(pt==='P' && pawnExists(player,x)) continue;
+          board[y][x]={t:pt,p:player};
+          hands[player][pt]--;
+          const chk=isInCheck(player);
+          board[y][x]=null;
+          hands[player][pt]++;
+          if(!chk) return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+function startGame(){
+  initBoard();
+  currentPlayer=0;
+  history=[];
+  saveState();
+  render();
 }
 
 function shouldPromote(piece,ty){
@@ -294,5 +406,4 @@ function showMessage(msg){
   }
 }
 
-initBoard();
-render();
+startGame();

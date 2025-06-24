@@ -5,3 +5,4 @@ body { font-family: Arial, sans-serif; }
 #message { color: red; height: 1em; margin-bottom: 5px; }
 .turn { margin-bottom: 5px; font-weight: bold; }
 .square[draggable="true"] { cursor: grab; }
+#undo { margin-top: 5px; }
