@@ -111,25 +111,30 @@ function onSquareClick(e){
   const x=parseInt(e.currentTarget.dataset.x);
   const y=parseInt(e.currentTarget.dataset.y);
   if(selected){
+    const pieceHere = board[y][x];
+    if(pieceHere && pieceHere.p===currentPlayer){
+      selected = {x, y};
+      highlightMoves(legalMoves(x, y, pieceHere));
+      return;
+    }
     if(selected.piece){
-      // drop from hand
-      if(moveDrop(x,y,selected.piece,selected.owner)){
-        selected=null; render();
+      if(moveDrop(x, y, selected.piece, selected.owner)){
+        selected = null; render();
       }else{
         showMessage('そこには移動できません');
       }
     } else {
-      if(movePiece(selected.x,selected.y,x,y)){
-        selected=null; render();
+      if(movePiece(selected.x, selected.y, x, y)){
+        selected = null; render();
       }else{
         showMessage('そこには移動できません');
       }
     }
   } else {
-    const piece=board[y][x];
+    const piece = board[y][x];
     if(piece && piece.p===currentPlayer){
-      selected={x,y};
-      highlightMoves(legalMoves(x,y,piece));
+      selected = {x, y};
+      highlightMoves(legalMoves(x, y, piece));
     }
   }
 }
@@ -224,8 +229,9 @@ function movePiece(sx,sy,tx,ty){
   if(!moves.some(m=>m.x===tx && m.y===ty)) return false;
   const target=board[ty][tx];
   if(target){
-    const base=target.t.replace(/^P/,'');
-    hands[currentPlayer][base]=(hands[currentPlayer][base]||0)+1;
+    let base = target.t;
+    if(base.length>1 && base.startsWith('P')) base = base.slice(1); // demote
+    hands[currentPlayer][base] = (hands[currentPlayer][base] || 0) + 1;
   }
   board[sy][sx]=null;
   board[ty][tx]=piece;
