@@ -1,5 +1,6 @@
 const boardElement = document.getElementById('board');
 const handElements = [document.getElementById('hand0'), document.getElementById('hand1')];
+const turnElement = document.getElementById('turn');
 
 const PIECES = {
   P: '歩', L: '香', N: '桂', S: '銀', G: '金', B: '角', R: '飛', K: '王',
@@ -8,7 +9,7 @@ const PIECES = {
 
 let board = [];
 let hands = [{}, {}]; // piece counts
-let currentPlayer = 0; // 0: gote (bottom), 1: sente (top)
+let currentPlayer = 0; // 0: 先手(bottom), 1: 後手(top)
 let selected = null; // {x,y} or {piece:'P'} for drop
 let dragged = null;
 
@@ -63,6 +64,9 @@ function render() {
       }
     }
   }
+  if(turnElement){
+    turnElement.textContent = currentPlayer===0 ? '先手の番' : '後手の番';
+  }
 }
 
 function inside(x,y){return x>=0&&x<9&&y>=0&&y<9;}
@@ -86,7 +90,7 @@ function legalMoves(x,y,piece){
   };
   let res=[];
   const dlist=dirs[piece.t];
-  const forward = piece.p===0 ? -1 : 1;
+  const forward = piece.p===0 ? 1 : -1;
   for(const d of dlist){
     const dx=d[0]; const dy=d[1];
     const repeat=d[2]||1;
