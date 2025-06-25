@@ -1,0 +1,31 @@
+body {
+  font-family: sans-serif;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 40px);
+  grid-template-rows: repeat(9, 40px);
+  gap: 1px;
+  margin-bottom: 1em;
+}
+.square {
+  width: 40px;
+  height: 40px;
+  background: #f5deb3;
+  text-align: center;
+  line-height: 40px;
+  font-size: 24px;
+  user-select: none;
+}
+.square.highlight {
+  background: #ffeb3b;
+}
+.hand {
+  min-height: 40px;
+  border: 1px solid #333;
+  padding: 5px;
+  margin-bottom: 1em;
+}
+.piece {
+  cursor: move;
+}
