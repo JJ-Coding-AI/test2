@@ -1,0 +1,50 @@
+body {
+  font-family: sans-serif;
+}
+.board {
+  width: 450px;
+  height: 450px;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  border: 1px solid #333;
+}
+.cell {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #666;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 50px;
+  font-size: 24px;
+}
+.hand {
+  display: flex;
+  gap: 4px;
+  min-height: 60px;
+  border: 1px solid #333;
+  padding: 4px;
+}
+.piece {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #666;
+  background: #f1c27d;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.piece.gote {
+  transform: rotate(180deg);
+}
+.highlight {
+  background: yellow;
+  opacity: 0.5;
+}
+.hands {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
