@@ -1,0 +1,10 @@
+body { font-family: sans-serif; text-align: center; }
+#game { display: flex; justify-content: center; align-items: center; }
+#board { border-collapse: collapse; margin: 0 10px; }
+#board td { width: 50px; height: 50px; border: 1px solid #333; position: relative; }
+#board td.highlight { background-color: #ffd; }
+.piece { cursor: move; font-size: 30px; line-height: 50px; user-select: none; }
+.piece.white { transform: rotate(180deg); }
+.captured { min-height: 50px; margin: 0 10px; border: 1px solid #333; padding: 5px; display: flex; flex-wrap: wrap; }
+.captured .piece { margin: 2px; }
+#turn { margin-top: 10px; }
