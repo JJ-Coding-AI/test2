@@ -1,0 +1,40 @@
+body {
+  font-family: sans-serif;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 50px);
+  grid-template-rows: repeat(9, 50px);
+  gap: 2px;
+  margin-bottom: 10px;
+}
+.cell {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #555;
+  text-align: center;
+  line-height: 50px;
+  font-size: 24px;
+  user-select: none;
+  position: relative;
+}
+.cell.highlight {
+  background: #ffe082;
+}
+.piece {
+  cursor: move;
+}
+.gote {
+  transform: rotate(180deg);
+  display: inline-block;
+}
+.holdings {
+  margin-top: 10px;
+}
+.holding {
+  margin-bottom: 5px;
+  min-height: 40px;
+}
+.holding .piece {
+  margin-right: 5px;
+}
