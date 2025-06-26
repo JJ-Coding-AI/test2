@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>WEB将棋</title>
+<style>
+  body { font-family: sans-serif; }
+  #board { display: grid; grid-template-columns: repeat(9, 60px); grid-template-rows: repeat(9, 60px); width: 540px; margin-bottom: 10px; }
+  .cell { width: 60px; height: 60px; border: 1px solid #555; display: flex; align-items: center; justify-content: center; }
+  .highlight { background-color: lightgreen; }
+  .piece { cursor: move; font-size: 24px; user-select: none; }
+  #hands { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .hand { border: 1px solid #555; padding: 5px; min-height: 60px; }
+  #status { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<h1>ドラッグ＆ドロップ将棋</h1>
+<div id="status">現在の手番: <span id="turn">先手</span></div>
+<div id="hands">
+  <div id="hand1" class="hand">先手の持ち駒:</div>
+  <div id="hand2" class="hand">後手の持ち駒:</div>
+</div>
+<div id="board"></div>
+<button id="undo">待った</button>
+<script>
+const boardElem = document.getElementById('board');
+const turnElem = document.getElementById('turn');
+const hand1Elem = document.getElementById('hand1');
+const hand2Elem = document.getElementById('hand2');
+const undoBtn = document.getElementById('undo');
+
+const PIECES = {
+  K: '王',
+  R: '飛',
+  B: '角',
+  G: '金',
+  S: '銀',
+  N: '桂',
+  L: '香',
+  P: '歩',
+  PR: '龍',
+  PB: '馬',
+  PS: '成銀',
+  PN: '成桂',
+  PL: '成香',
+  PP: 'と',
+};
+
+let board = [];
+let turn = 1; // 1: sente, -1: gote
+let hands = {1: [], -1: []};
+let history = [];
+
+function initBoard() {
+  board = Array.from({length:9}, () => Array(9).fill(null));
+  const setup = [
+    ['L','N','S','G','K','G','S','N','L'],
+    [null,'R',null,null,null,null,null,'B',null],
+    ['P','P','P','P','P','P','P','P','P']
+  ];
+  for(let y=0;y<3;y++) {
+    for(let x=0;x<9;x++) {
+      const p = setup[y][x];
+      if(p) board[y][x] = {type:p, side:-1};
+    }
+  }
+  for(let y=0;y<3;y++) {
+    for(let x=0;x<9;x++) {
+      const p = setup[y][8-x];
+      if(p) board[8-y][8-x] = {type:p, side:1};
+    }
+  }
+  hands = {1:[], -1:[]};
+  turn = 1;
+  history = [];
+}
+
+function saveHistory() {
+  history.push({
+    board: JSON.parse(JSON.stringify(board)),
+    hands: JSON.parse(JSON.stringify(hands)),
+    turn
+  });
+}
+
+function undo() {
+  if(history.length === 0) return;
+  const last = history.pop();
+  board = last.board;
+  hands = last.hands;
+  turn = last.turn;
+  update();
+}
+
+function createCell(x,y) {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.dataset.x = x;
+  cell.dataset.y = y;
+  cell.addEventListener('dragover', e => e.preventDefault());
+  cell.addEventListener('drop', dropPiece);
+  boardElem.appendChild(cell);
+}
+
+function updateBoard() {
+  boardElem.innerHTML = '';
+  for(let y=0;y<9;y++) {
+    for(let x=0;x<9;x++) createCell(x,y);
+  }
+  for(let y=0;y<9;y++) {
+    for(let x=0;x<9;x++) {
+      const piece = board[y][x];
+      if(piece) {
+        const div = document.createElement('div');
+        div.textContent = PIECES[piece.type];
+        div.className = 'piece';
+        if(piece.side===-1) div.style.transform = 'rotate(180deg)';
+        div.draggable = (piece.side === turn);
+        div.dataset.x = x;
+        div.dataset.y = y;
+        div.addEventListener('dragstart', dragPiece);
+        div.addEventListener('dragend', clearHighlights);
+        boardElem.children[y*9+x].appendChild(div);
+      }
+    }
+  }
+}
+
+function updateHands() {
+  hand1Elem.innerHTML = '先手の持ち駒:';
+  hand2Elem.innerHTML = '後手の持ち駒:';
+  for(const p of hands[1]) addHandPiece(hand1Elem,p,1);
+  for(const p of hands[-1]) addHandPiece(hand2Elem,p,-1);
+}
+
+function addHandPiece(parent,piece,side) {
+  const div = document.createElement('div');
+  div.textContent = PIECES[piece];
+  div.className = 'piece';
+  if(side===-1) div.style.transform = 'rotate(180deg)';
+  div.draggable = (side === turn);
+  div.dataset.hand = side;
+  div.dataset.piece = piece;
+  div.addEventListener('dragstart', dragHand);
+  parent.appendChild(div);
+}
+
+function update() {
+  updateBoard();
+  updateHands();
+  turnElem.textContent = (turn===1?'先手':'後手');
+}
+
+function dragPiece(e) {
+  const x = e.target.dataset.x;
+  const y = e.target.dataset.y;
+  e.dataTransfer.setData('from','board');
+  e.dataTransfer.setData('x',x);
+  e.dataTransfer.setData('y',y);
+  showMoves(x,y);
+}
+
+function dragHand(e) {
+  e.dataTransfer.setData('from','hand');
+  e.dataTransfer.setData('side',e.target.dataset.hand);
+  e.dataTransfer.setData('piece',e.target.dataset.piece);
+}
+
+function dropPiece(e) {
+  const from = e.dataTransfer.getData('from');
+  const tx = parseInt(e.currentTarget.dataset.x);
+  const ty = parseInt(e.currentTarget.dataset.y);
+  if(from==='board') {
+    const x = parseInt(e.dataTransfer.getData('x'));
+    const y = parseInt(e.dataTransfer.getData('y'));
+    movePiece(x,y,tx,ty);
+  } else if(from==='hand') {
+    const piece = e.dataTransfer.getData('piece');
+    const side = parseInt(e.dataTransfer.getData('side'));
+    dropHandPiece(piece,side,tx,ty);
+  }
+  clearHighlights();
+}
+
+function movePiece(x,y,tx,ty) {
+  const piece = board[y][x];
+  if(!piece || piece.side!==turn) return;
+  if(!canMove(piece,x,y,tx,ty)) return;
+  saveHistory();
+  let target = board[ty][tx];
+  if(target) {
+    if(target.type==='K') {
+      alert((turn===1?'先手':'後手')+'の勝ち！');
+      initBoard();
+      update();
+      return;
+    }
+    hands[turn].push(target.type.replace(/^P([RNBLSP])$/, '$1'));
+  }
+  board[ty][tx] = piece;
+  board[y][x] = null;
+  // 成り判定: 敵陣または自陣に入った場合(簡易)
+  if(shouldPromote(piece,y,ty)) {
+    if(confirm('成りますか?')) promote(piece);
+  }
+  turn *= -1;
+  if(isCheck(turn)) {
+    if(!hasLegalMove(turn)) {
+      alert((turn===1?'先手':'後手')+'の詰み！');
+      initBoard();
+      update();
+      return;
+    } else {
+      alert('王手！');
+    }
+  }
+  update();
+}
+
+function dropHandPiece(piece,side,tx,ty) {
+  if(turn!==side) return;
+  if(board[ty][tx]) return;
+  saveHistory();
+  const index = hands[side].indexOf(piece);
+  if(index===-1) return;
+  hands[side].splice(index,1);
+  board[ty][tx] = {type:piece, side};
+  turn *= -1;
+  if(isCheck(turn)) {
+    if(!hasLegalMove(turn)) {
+      alert((turn===1?'先手':'後手')+'の詰み！');
+      initBoard();
+      update();
+      return;
+    } else {
+      alert('王手！');
+    }
+  }
+  update();
+}
+
+function shouldPromote(piece,y,ty) {
+  const zone = piece.side===1 ? 0:6;
+  return (y<3 && piece.side===1) || (y>5 && piece.side===-1) || (ty<3 && piece.side===1) || (ty>5 && piece.side===-1);
+}
+
+function promote(piece) {
+  const map = {R:'PR',B:'PB','S':'PS','N':'PN','L':'PL','P':'PP'};
+  if(map[piece.type]) piece.type = map[piece.type];
+}
+
+function showMoves(x,y) {
+  const piece = board[y][x];
+  const moves = getMoves(piece,x,y);
+  for(const m of moves) {
+    const cell = boardElem.children[m.y*9+m.x];
+    cell.classList.add('highlight');
+  }
+}
+
+function clearHighlights() {
+  boardElem.querySelectorAll('.highlight').forEach(c=>c.classList.remove('highlight'));
+}
+
+function getMoves(piece,x,y) {
+  const dirs = {
+    K:[[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]],
+    G:[[0,1],[1,1],[1,0],[0,-1],[-1,0],[-1,1]],
+    S:[[0,1],[1,1],[-1,1],[1,-1],[-1,-1]],
+    N:[[1,2],[-1,2]],
+    L:[[0,1]],
+    P:[[0,1]],
+    R:[[0,1],[1,0],[0,-1],[-1,0]],
+    B:[[1,1],[1,-1],[-1,1],[-1,-1]],
+    PR:[[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]],
+    PB:[[1,1],[1,-1],[-1,1],[-1,-1],[0,1],[1,0],[0,-1],[-1,0]],
+    PS:[[0,1],[1,1],[1,0],[0,-1],[-1,0],[-1,1]],
+    PN:[[0,1],[1,1],[1,0],[0,-1],[-1,0],[-1,1]],
+    PL:[[0,1],[1,1],[1,0],[0,-1],[-1,0],[-1,1]],
+    PP:[[0,1],[1,1],[1,0],[0,-1],[-1,0],[-1,1]]
+  };
+  let result = [];
+  const moveSet = dirs[piece.type];
+  const forward = piece.side===1? -1:1;
+  for(const d of moveSet) {
+    let [dx,dy] = d;
+    dx *= (d[1]?1:1); // not necessary but keep structure
+    dy *= (piece.type==='N'? (piece.side===1?-1:1): (piece.side===1?-1:1));
+  }
+  for(const [dx0,dy0] of moveSet) {
+    let dx = dx0;
+    let dy = dy0;
+    if(piece.side===1) { dy = -dy0; dx = dx0; }
+    let nx = x + dx;
+    let ny = y + dy;
+    if(piece.type==='L' || piece.type==='R' || piece.type==='B') {
+      while(inRange(nx,ny)) {
+        if(board[ny][nx]) {
+          if(board[ny][nx].side!==piece.side) result.push({x:nx,y:ny});
+          break;
+        }
+        result.push({x:nx,y:ny});
+        nx += dx;
+        ny += dy;
+      }
+    } else {
+      if(inRange(nx,ny)) {
+        if(!board[ny][nx] || board[ny][nx].side!==piece.side) result.push({x:nx,y:ny});
+      }
+    }
+  }
+  return result;
+}
+
+function canMove(piece,x,y,tx,ty) {
+  const moves = getMoves(piece,x,y);
+  return moves.some(m=>m.x===tx && m.y===ty);
+}
+
+function inRange(x,y) {
+  return x>=0 && x<9 && y>=0 && y<9;
+}
+
+function findKing(side) {
+  for(let y=0;y<9;y++) {
+    for(let x=0;x<9;x++) {
+      const p = board[y][x];
+      if(p && p.type==='K' && p.side===side) return {x,y};
+    }
+  }
+  return null;
+}
+
+function isCheck(side) {
+  const king = findKing(side);
+  if(!king) return false;
+  const enemy = -side;
+  for(let y=0;y<9;y++) {
+    for(let x=0;x<9;x++) {
+      const p = board[y][x];
+      if(p && p.side===enemy) {
+        const moves = getMoves(p,x,y);
+        if(moves.some(m=>m.x===king.x && m.y===king.y)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function hasLegalMove(side) {
+  for(let y=0;y<9;y++) {
+    for(let x=0;x<9;x++) {
+      const p = board[y][x];
+      if(p && p.side===side) {
+        const moves = getMoves(p,x,y);
+        for(const m of moves) {
+          const captured = board[m.y][m.x];
+          const original = board[y][x];
+          board[m.y][m.x] = p;
+          board[y][x] = null;
+          const check = isCheck(side);
+          board[y][x] = original;
+          board[m.y][m.x] = captured;
+          if(!check) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+undoBtn.addEventListener('click', undo);
+initBoard();
+update();
+</script>
+</body>
+</html>
