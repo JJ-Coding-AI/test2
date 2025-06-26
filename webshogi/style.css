@@ -1,0 +1,48 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+}
+#board {
+  display: grid;
+  grid-template-columns: repeat(9, 60px);
+  grid-template-rows: repeat(9, 60px);
+  margin: 20px auto;
+  width: 540px;
+  height: 540px;
+  border: 2px solid #333;
+}
+.cell {
+  width: 60px;
+  height: 60px;
+  border: 1px solid #ccc;
+  position: relative;
+}
+.piece {
+  width: 58px;
+  height: 58px;
+  line-height: 58px;
+  text-align: center;
+  user-select: none;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.piece.player1 {
+  color: black;
+}
+.piece.player2 {
+  color: red;
+  transform: rotate(180deg);
+}
+.highlight {
+  background-color: rgba(0, 255, 0, 0.3);
+}
+.hand {
+  margin: 10px;
+}
+.hand .piece {
+  position: static;
+  display: inline-block;
+  margin: 2px;
+}
