@@ -1,0 +1,47 @@
+body {
+  font-family: sans-serif;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 60px);
+  grid-template-rows: repeat(9, 60px);
+  border: 2px solid #333;
+  width: 540px;
+  margin-bottom: 10px;
+}
+.cell {
+  width: 60px;
+  height: 60px;
+  border: 1px solid #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.piece {
+  font-size: 28px;
+  cursor: grab;
+  user-select: none;
+}
+.player1 {
+  transform: rotate(180deg);
+}
+.highlight {
+  background-color: rgba(255, 255, 0, 0.5);
+}
+.hand {
+  border: 1px solid #999;
+  min-height: 60px;
+  display: flex;
+  flex-wrap: wrap;
+  width: 540px;
+}
+.hand .piece {
+  margin: 2px;
+}
+.hands {
+  display: flex;
+  justify-content: space-between;
+  width: 560px;
+  margin-bottom: 10px;
+}
