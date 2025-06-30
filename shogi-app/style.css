@@ -1,0 +1,25 @@
+body { font-family: sans-serif; }
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 40px);
+  grid-template-rows: repeat(9, 40px);
+  gap: 2px;
+}
+.square {
+  width: 40px;
+  height: 40px;
+  background: #f0d9b5;
+  position: relative;
+}
+.square.dark { background: #b58863; }
+.piece {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  line-height: 40px;
+  font-size: 24px;
+  cursor: grab;
+}
+.piece.white { transform: rotate(180deg); }
+.hand { margin: 10px 0; }
+.highlight { box-shadow: inset 0 0 0 3px yellow; }
