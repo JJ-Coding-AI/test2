@@ -1,0 +1,51 @@
+body {
+  font-family: sans-serif;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 40px);
+  grid-template-rows: repeat(9, 40px);
+  gap: 1px;
+  width: 362px;
+  margin-bottom: 1em;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0d9b5;
+  font-size: 24px;
+}
+
+.cell.highlight {
+  background-color: #a9a9ff;
+}
+
+.hands {
+  display: flex;
+  gap: 2em;
+  margin-bottom: 1em;
+}
+
+.hand {
+  border: 1px solid #333;
+  padding: 0.5em;
+  min-height: 50px;
+}
+
+.piece {
+  cursor: grab;
+}
+
+.piece.white {
+  transform: rotate(180deg);
+}
+
+#status {
+  margin-bottom: 1em;
+}
