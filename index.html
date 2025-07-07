@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブラウザ将棋</title>
+<style>
+  body { font-family: sans-serif; text-align: center; }
+  #board { width: 540px; height: 540px; margin: auto; display: grid; grid-template: repeat(9,1fr)/repeat(9,1fr); border: 2px solid #333; }
+  .cell { border: 1px solid #333; position: relative; }
+  .piece { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; user-select: none; }
+  .enemy { transform: rotate(180deg); }
+  .highlight { background: #ff0; opacity: 0.6; }
+  #handBlack, #handWhite { margin: 10px; min-height: 60px; }
+  #message { margin: 10px; }
+  #undo { margin: 10px; }
+</style>
+</head>
+<body>
+<h1>ブラウザ将棋</h1>
+<div id="handWhite"></div>
+<div id="board"></div>
+<div id="handBlack"></div>
+<div id="message"></div>
+<button id="undo">待った</button>
+<script src="shogi.js"></script>
+</body>
+</html>
