@@ -1,0 +1,30 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+#board {
+  display: inline-block;
+  border: 1px solid #333;
+}
+
+.board-row {
+  display: flex;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #333;
+  line-height: 40px;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.highlight {
+  background: #ffd;
+}
+
+.dragging {
+  opacity: 0.5;
+}
