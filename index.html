@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>簡易将棋</title>
+<style>
+  body { font-family: sans-serif; }
+  #board { display: grid; grid-template-columns: repeat(9, 40px); grid-template-rows: repeat(9, 40px); width: 360px; margin: auto; }
+  .cell { width: 40px; height: 40px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+  .black { background: #f0d9b5; }
+  .white { background: #b58863; }
+  .highlight { background: yellow !important; }
+  #hands { display: flex; justify-content: space-between; margin-top: 10px; }
+  .hand { border: 1px solid #000; padding: 5px; min-height: 50px; width: 150px; }
+  .piece { cursor: move; }
+  #status { margin-top: 10px; }
+  #undo { margin-top: 5px; }
+</style>
+</head>
+<body>
+<h1>将棋AI対戦</h1>
+<div id="board"></div>
+<div id="hands">
+  <div id="hand0" class="hand">先手持ち駒:</div>
+  <div id="hand1" class="hand">後手持ち駒:</div>
+</div>
+<div id="status"></div>
+<button id="undo" onclick="undo()">待った</button>
+<script src="script.js"></script>
+</body>
+</html>
