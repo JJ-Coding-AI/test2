@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ブラウザ将棋 (人間 vs AI)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ブラウザ将棋 (人間 vs AI)</h1>
+  <div id="controls">
+    <label>難易度:
+      <select id="level">
+        <option value="2">Easy</option>
+        <option value="4" selected>Normal</option>
+        <option value="6">Hard</option>
+      </select>
+    </label>
+    <button id="reset">リセット</button>
+    <button id="undo">Undo</button>
+    <span id="turn">先手番</span>
+  </div>
+  <div id="board" class="board"></div>
+  <div id="hand-b" class="hand">先手持ち駒:</div>
+  <div id="hand-w" class="hand">後手持ち駒:</div>
+  <div id="message"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
