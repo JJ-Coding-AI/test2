@@ -1,0 +1,31 @@
+body {
+  background: #222;
+  color: #eee;
+  font-family: sans-serif;
+  text-align: center;
+}
+#game { display: inline-block; }
+.hand {
+  margin: 10px auto;
+  min-height: 50px;
+}
+#board {
+  width: 640px;
+  height: 640px;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  border: 2px solid #888;
+  background: #444;
+}
+.cell {
+  border: 1px solid #666;
+  position: relative;
+  user-select: none;
+}
+.piece {
+  font-size: 38px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.ai { transform: rotate(180deg); }
+.highlight { background: #666; }
