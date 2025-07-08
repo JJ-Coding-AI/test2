@@ -29,6 +29,7 @@ body {
   cursor:pointer;
   user-select:none;
   font-family:'Yu Mincho', 'Hiragino Mincho ProN', 'serif';
+  color:#000;
 }
 .white {
   transform:rotate(180deg);
@@ -37,14 +38,24 @@ body {
   display:flex;
   justify-content:center;
   gap:4px;
-  margin:4px auto;
-  width:640px;
   min-height:40px;
 }
 .handPiece {
   border:1px solid #888;
   padding:2px 4px;
   cursor:pointer;
+  color:#000;
+}
+.handBox{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+  width:640px;
+  margin:4px auto;
+}
+.handLabel{
+  color:#eee;
 }
 .promoted {
   color:red;

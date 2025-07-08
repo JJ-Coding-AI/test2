@@ -104,13 +104,14 @@ function applyMove(s,m){
     s.board[m.from]=null;
     const toPiece=s.board[m.to];
     if(toPiece){
+      m.captured={type:toPiece.type,c:toPiece.c};
       const t=UNPROMOTE[toPiece.type]||toPiece.type;
       s.hand[p.c][t]=(s.hand[p.c][t]||0)+1;
-    }
+    } else m.captured=null;
     if(m.promote)p.type= PROMOTE[p.type];
     s.board[m.to]=p;
   }else{
-    s.hand[s.turn][m.drop]--; 
+    s.hand[s.turn][m.drop]--;
     s.board[m.to]={type:m.drop,c:s.turn};
   }
   s.turn^=1;
@@ -123,9 +124,10 @@ function undo(){
     state.board[m.to]=null;
     if(m.promote)p.type=UNPROMOTE[p.type];
     state.board[m.from]=p;
-    if(m.capture){
-      state.hand[state.turn][m.capture]--; 
-      state.board[m.to]={type:m.capture,c:state.turn^1};
+    if(m.captured){
+      const t=UNPROMOTE[m.captured.type]||m.captured.type;
+      state.hand[state.turn][t]--;
+      state.board[m.to]={type:m.captured.type,c:state.turn^1};
     }
   }else{
     state.board[m.to]=null;
