@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>将棋</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="handBox"><span class="handLabel">後手（コンピュータ）持ち駒:</span><div id="hand1" class="hand"></div></div>
+  <div id="board" class="board"></div>
+  <div class="handBox"><span class="handLabel">先手（あなた）持ち駒:</span><div id="hand0" class="hand"></div></div>
+  <div id="info">
+    <span id="turn">先手番</span>
+    <span id="moveCount">手数:0</span>
+    <button id="undo">待った</button>
+    <button id="reset" style="display:none">リセット</button>
+    <span id="status"></span>
+  </div>
+</div>
+<script src="shogi.js"></script>
+</body>
+</html>
