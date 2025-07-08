@@ -1,0 +1,7 @@
+body { background:#222; color:#eee; font-family:'MS Gothic', monospace; }
+#board { width:640px; height:640px; display:grid; grid-template-columns:repeat(9,1fr); border:2px solid #555; margin:10px auto; }
+.square { width:70px; height:70px; border:1px solid #555; position:relative; display:flex; align-items:center; justify-content:center; }
+.square.highlight { background:#444; }
+.piece { cursor:grab; user-select:none; font-size:36px; }
+.hand { margin:5px; }
+#controls { margin:5px; }
