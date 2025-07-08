@@ -1,0 +1,45 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 40px);
+  grid-template-rows: repeat(9, 40px);
+  margin: 10px auto;
+  width: 360px;
+}
+.cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #555;
+  position: relative;
+}
+.piece {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 4px;
+  background: #f5deb3;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  cursor: move;
+}
+.highlight {
+  background: rgba(0, 255, 0, 0.3);
+}
+#controls {
+  margin-bottom: 10px;
+}
+#spinner {
+  margin-left: 10px;
+}
+.hand-piece {
+  display: inline-block;
+  margin: 2px;
+  padding: 2px 4px;
+  background: #eee;
+  border: 1px solid #aaa;
+  cursor: move;
+}
