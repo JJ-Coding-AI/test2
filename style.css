@@ -1,0 +1,32 @@
+body {
+  background: #222;
+  color: #eee;
+  font-family: sans-serif;
+  text-align: center;
+}
+#board {
+  width: 640px;
+  height: 640px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  border: 2px solid #555;
+}
+.cell {
+  border: 1px solid #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  user-select: none;
+}
+.hand {
+  margin: 10px;
+}
+.highlight {
+  background: #444;
+}
+.dragging {
+  opacity: 0.5;
+}

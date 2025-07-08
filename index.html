@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブラウザ将棋</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="board"></div>
+  <div id="hands">
+    <div id="black-hand" class="hand"></div>
+    <div id="white-hand" class="hand"></div>
+  </div>
+  <div id="controls">
+    <select id="level">
+      <option value="300">易しい</option>
+      <option value="1000" selected>普通</option>
+      <option value="3000">難しい</option>
+    </select>
+    <button id="undo">待った</button>
+    <span id="turn"></span>
+  </div>
+</div>
+<script src="shogi.js"></script>
+</body>
+</html>
