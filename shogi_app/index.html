@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>人間 vs AI 将棋</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>人間 vs AI 将棋</h1>
+  <div id="controls">
+    <label for="level">AI 強さ:</label>
+    <select id="level">
+      <option value="weak">弱い</option>
+      <option value="normal" selected>普通</option>
+      <option value="strong">強い</option>
+    </select>
+    <button id="undo">待った</button>
+    <button id="download">棋譜ダウンロード</button>
+    <span id="turn">あなたの手番</span>
+    <span id="spinner" hidden>思考中...</span>
+  </div>
+  <div id="board" class="board"></div>
+  <div id="captured">
+    <div id="hand_sente">先手持ち駒:</div>
+    <div id="hand_gote">後手持ち駒:</div>
+  </div>
+  <script src="frontend.js"></script>
+</body>
+</html>
