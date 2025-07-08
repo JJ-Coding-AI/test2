@@ -1,0 +1,12 @@
+body{background:#222;color:#eee;font-family:sans-serif;text-align:center}
+#board{width:640px;height:640px;margin:20px auto;display:grid;grid-template:repeat(9,1fr)/repeat(9,1fr);border:2px solid #555}
+.cell{border:1px solid #555;position:relative}
+.piece{font-size:32px;user-select:none;cursor:grab;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.white{transform:translate(-50%,-50%) rotate(180deg);}
+.hand{margin:10px;min-height:40px}
+.handPiece{display:inline-block;margin:0 5px;padding:5px;border:1px solid #555;cursor:grab}
+#controls{margin:10px}
+.highlight{background:#444}
+#modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center}
+.hidden{display:none}
+.modalBox{background:#333;padding:20px;border:1px solid #555}

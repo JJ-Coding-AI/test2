@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Shogi vs AI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="board"></div>
+<div id="hands">
+  <div id="blackHand" class="hand"></div>
+  <div id="whiteHand" class="hand"></div>
+</div>
+<div id="controls">
+  <span id="turn"></span>
+  <button id="undo">待った</button>
+  <select id="level">
+    <option value="1">弱</option>
+    <option value="2" selected>普</option>
+    <option value="3">強</option>
+  </select>
+</div>
+<div id="modal" class="hidden">
+  <div class="modalBox">
+    <p>成りますか？</p>
+    <button id="promYes">成る</button>
+    <button id="promNo">成らない</button>
+  </div>
+</div>
+<script src="shogi.js"></script>
+</body>
+</html>
