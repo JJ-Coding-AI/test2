@@ -1,0 +1,18 @@
+body{
+  background:#222;color:#eee;font-family:"MS Gothic","sans-serif";margin:0;padding:20px;
+}
+.board{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  grid-template-rows:repeat(9,1fr);
+  width:640px;height:640px;margin-top:10px;
+  border:2px solid #555;
+}
+.cell{
+  border:1px solid #555;display:flex;justify-content:center;align-items:center;
+  font-size:32px;user-select:none;
+}
+.cell.even{background:#333;} .cell.odd{background:#444;}
+.highlight{background:#666!important;}
+#hands{margin-top:10px;font-size:20px;}
+#control{margin-bottom:10px;}
