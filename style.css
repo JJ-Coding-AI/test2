@@ -1,0 +1,39 @@
+body {
+  background:#222;
+  color:#eee;
+  font-family:sans-serif;
+  text-align:center;
+}
+.board {
+  width:640px;
+  height:640px;
+  margin:20px auto;
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  grid-template-rows:repeat(9,1fr);
+  background:#d2b48c;
+  border:4px solid #996515;
+}
+.square {
+  border:1px solid #555;
+  position:relative;
+}
+.hand {
+  margin:10px auto;
+  min-height:40px;
+}
+.piece {
+  font-size:36px;
+  line-height:64px;
+  user-select:none;
+  cursor:grab;
+}
+.white {
+  transform:rotate(180deg);
+}
+.promoted {
+  color:red;
+}
+.highlight {
+  background:rgba(255,255,0,0.4);
+}
