@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブラウザ将棋</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>ブラウザ将棋</h1>
+<div id="info">
+  <span id="turn">手番: 先手</span> |
+  <span id="move">0 手目</span>
+</div>
+<div id="hands">
+  <div id="black-hand" class="hand"></div>
+  <div id="white-hand" class="hand"></div>
+</div>
+<div id="board" class="board"></div>
+<div id="controls">
+  <button id="undo">待った</button>
+  <button id="reset">リセット</button>
+</div>
+<div id="message"></div>
+<script src="shogi.js"></script>
+</body>
+</html>
