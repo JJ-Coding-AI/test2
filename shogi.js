@@ -23,6 +23,8 @@ const boardEl=document.getElementById('board');
 const handEls=[document.getElementById('hand0'),document.getElementById('hand1')];
 const statusEl=document.getElementById('status');
 const moveEl=document.getElementById('moveCount');
+const logEl=document.getElementById('log');
+let logs=[];
 let timerId=null;
 let thinkStart=0;
 function render(){
@@ -93,6 +95,36 @@ function highlight(){
     boardEl.children[idx].classList.add('highlight');
   });
 }
+
+function idxToString(i){
+  const file=9-(i%9);
+  const rank=Math.floor(i/9)+1;
+  return file+''+rank;
+}
+
+function moveToString(m){
+  if(m.from>=0){
+    const from=idxToString(m.from);
+    const to=idxToString(m.to);
+    const p=state.board[m.to];
+    const name=PIECE_NAMES[p.type];
+    const cap=m.captured? 'x'+PIECE_NAMES[m.captured.type]:'';
+    const promo=m.promote? '成':'';
+    return name+from+cap+'-'+to+promo;
+  }else{
+    return PIECE_NAMES[m.drop]+'*'+idxToString(m.to);
+  }
+}
+
+function renderLog(){
+  logEl.innerHTML=logs.map(l=>'<div>'+l+'</div>').join('');
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+function addLog(player,m){
+  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  renderLog();
+}
 boardEl.onclick=e=>{
   if(state.turn!==HUMAN)return;
   const idx=Number(e.target.closest('.cell')?.dataset.index);
@@ -111,9 +143,22 @@ document.getElementById('undo').onclick=()=>{
   stopThinking(Date.now()-thinkStart);
   undo();undo();
   render();
+  renderLog();
 };
+
+function resetGame(){
+  ignore=true;
+  worker.postMessage({type:'stop'});
+  stopThinking(Date.now()-thinkStart);
+  state=initialState();
+  logs=[];
+  render();
+  renderLog();
+}
+document.getElementById('reset').onclick=resetGame;
 function playMove(m){
   applyMove(state,m);
+  addLog(HUMAN,m);
   render();
   state.history.push(m);
   startThinking();
@@ -154,6 +199,7 @@ function undo(){
     state.board[m.to]=null;
     state.hand[state.turn][m.drop]=(state.hand[state.turn][m.drop]||0)+1;
   }
+  logs.pop();
 }
 function generateLegalMoves(s,color){
   const moves=generateMoves(s,color);
@@ -243,6 +289,7 @@ worker.onmessage=e=>{
     return;
   }
   applyMove(state,move);
+  addLog(1,move);
   state.history.push(move);
   render();
 };
