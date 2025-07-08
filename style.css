@@ -1,0 +1,39 @@
+body {
+  background:#222;
+  color:#eee;
+  font-family:sans-serif;
+  text-align:center;
+}
+.board {
+  width:640px;
+  height:640px;
+  margin:20px auto;
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  grid-template-rows:repeat(9,1fr);
+  background:#d2a56d;
+  box-shadow:0 0 10px #000;
+}
+.piece {font-family:"Yu Mincho","Hiragino Mincho Pro","MS Mincho",serif;}
+.cell {
+  border:1px solid #444;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  cursor:pointer;
+  user-select:none;
+  font-family:"Yu Mincho","Hiragino Mincho Pro","MS Mincho",serif;
+}
+.hand {
+  margin:5px;
+}
+.white {
+  transform:rotate(180deg);
+}
+.promoted {
+  color:red;
+}
+.highlight {
+  background:#555;
+}
