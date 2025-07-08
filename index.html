@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブラウザ将棋</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="controls">
+<select id="level">
+  <option value="300">0.3秒</option>
+  <option value="1000" selected>1秒</option>
+  <option value="3000">3秒</option>
+</select>
+<button id="undo">待った</button>
+<span id="status"></span>
+</div>
+<div id="hands">
+  <div id="sente-hand" class="hand"></div>
+  <div id="gote-hand" class="hand"></div>
+</div>
+<div id="board"></div>
+<script type="module" src="shogi.js"></script>
+</body>
+</html>
