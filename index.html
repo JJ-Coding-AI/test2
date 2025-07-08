@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>将棋 vs AI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="controls">
+  <label>難易度:
+    <select id="depthSelect">
+      <option value="1">1</option>
+      <option value="3" selected>3</option>
+      <option value="5">5</option>
+    </select>
+  </label>
+  <button id="undoBtn">待った</button>
+  <span id="turnLabel"></span>
+</div>
+<div id="board"></div>
+<div id="hands">
+  <div id="hand0" class="hand">持ち駒: </div>
+  <div id="hand1" class="hand">AI 持ち駒: </div>
+</div>
+<script src="shogi.js"></script>
+</body>
+</html>
