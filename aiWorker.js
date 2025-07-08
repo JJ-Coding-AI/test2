@@ -6,6 +6,18 @@ let bestMove=null;
 let startTime=0;
 let respectTime=true;
 const TT=new Map();
+
+function orderMoves(moves){
+  return moves.sort((a,b)=>{
+    const score=(m)=>{
+      let s=0;
+      if(m.capture)s+=5;
+      if(m.promote)s+=2;
+      return s;
+    };
+    return score(b)-score(a);
+  });
+}
 self.onmessage=e=>{
   const d=e.data;
   if(d.type==='start'){
@@ -23,11 +35,12 @@ function iterative(state){
   startTime=Date.now();
   const legal=generateLegalMoves(state,state.turn);
   if(legal.length===0){bestMove=null;return Date.now()-startTime;}
+  orderMoves(legal);
   for(let depth=1;depth<=7;depth++){
     const [v,m]=search(state,depth,-1e9,1e9,true);
     if(stop)break;
     if(m)bestMove=m;
-    if(Date.now()-startTime>10000 && bestMove)break;
+    if(Date.now()-startTime>5000 && bestMove)break;
   }
   if(!bestMove){
     respectTime=false;
@@ -38,14 +51,13 @@ function iterative(state){
   return Date.now()-startTime;
 }
 function search(s,depth,alpha,beta,root){
-  if(stop||(respectTime && Date.now()-startTime>10000))return[evalState(s),null];
+  if(stop||(respectTime && Date.now()-startTime>5000))return[evalState(s),null];
   if(depth===0)return[evalState(s),null];
   const key=hashState(s);
   const tt=TT.get(key);
   if(tt && tt.depth>=depth)return[tt.score,tt.move];
-  const moves=generateLegalMoves(s,s.turn);
+  const moves=orderMoves(generateLegalMoves(s,s.turn));
   let best=null;
-  if(root)moves.sort(()=>Math.random()-0.5);
   for(const mv of moves){
     const ns=clone(s);
     applyMove(ns,mv);
@@ -55,10 +67,10 @@ function search(s,depth,alpha,beta,root){
       alpha=score;best=mv;
       if(alpha>=beta)break;
     }
-    if(stop||(respectTime && Date.now()-startTime>10000))break;
+    if(stop||(respectTime && Date.now()-startTime>5000))break;
   }
   TT.set(key,{depth,score:alpha,move:best});
-  if(TT.size>10000)TT.delete(TT.keys().next().value);
+  if(TT.size>20000)TT.delete(TT.keys().next().value);
   return[alpha,best];
 }
 function evalState(s){
