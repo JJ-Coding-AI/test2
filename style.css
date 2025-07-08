@@ -1,0 +1,8 @@
+body{background:#222;color:#ddd;font-family:sans-serif;text-align:center}
+#board{width:640px;height:640px;margin:10px auto;display:grid;grid-template:repeat(9,1fr)/repeat(9,1fr);border:2px solid #555}
+.cell{border:1px solid #555;position:relative}
+.piece{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;font-size:24px;width:100%;height:100%}
+.highlight{background:rgba(0,0,255,0.3)}
+.hand{display:flex;justify-content:center;margin:5px}
+.hand .piece{width:40px;height:40px;border:1px solid #555;margin:2px;background:#333}
+.ai{transform:rotate(180deg)}

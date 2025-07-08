@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ブラウザ将棋</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="info">
+    <div id="turn">手番: 先手</div>
+    <select id="level">
+      <option value="300">やさしい</option>
+      <option value="1000">ふつう</option>
+      <option value="3000">つよい</option>
+    </select>
+    <button id="undo">待った</button>
+  </div>
+  <div id="player-hand" class="hand"></div>
+  <div id="board"></div>
+  <div id="ai-hand" class="hand"></div>
+</div>
+<script src="shogi.js"></script>
+</body>
+</html>
