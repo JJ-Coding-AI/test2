@@ -5,7 +5,7 @@ const PIECE_NAMES={
 const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 const PROMOTE={'P':'+P','L':'+L','N':'+N','S':'+S','B':'+B','R':'+R'};
 const UNPROMOTE={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
-const HUMAN=0; // player side
+let HUMAN=0; // player side (0 for black, 1 for white, -1 for AI vs AI)
 function initialState(){
   const b=Array(81).fill(null);
   const s=['L','N','S','G','K','G','S','N','L',null,'R',null,null,null,null,null,'B',null];
@@ -122,7 +122,8 @@ function renderLog(){
 }
 
 function addLog(player,m){
-  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  const label=player===0?'先手:':'後手:';
+  logs.push(label+moveToString(m));
   renderLog();
 }
 boardEl.onclick=e=>{
@@ -155,14 +156,23 @@ function resetGame(){
   render();
   renderLog();
 }
-document.getElementById('reset').onclick=resetGame;
+document.getElementById('reset').onclick=()=>{HUMAN=0;worker.postMessage({type:'config',timeLimit:2000});resetGame();};
+document.getElementById('auto').onclick=()=>{
+  HUMAN=-1;
+  worker.postMessage({type:'config',timeLimit:200});
+  resetGame();
+  startThinking();
+  worker.postMessage({type:'start',state:serialize(state)});
+};
 function playMove(m){
   applyMove(state,m);
   addLog(HUMAN,m);
   render();
   state.history.push(m);
-  startThinking();
-  worker.postMessage({type:'start',state:serialize(state)});
+  if(state.turn!==HUMAN){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 }
 function inZone(color,idx){
   const y=8-Math.floor(idx/9);
@@ -301,11 +311,15 @@ worker.onmessage=e=>{
   const {move,time}=e.data;
   stopThinking(time);
   if(!move){
-    statusEl.textContent='後手の負けです';
+    statusEl.textContent=state.turn? '後手の負けです':'先手の負けです';
     return;
   }
   applyMove(state,move);
-  addLog(1,move);
+  addLog(state.turn^1,move);
   state.history.push(move);
   render();
+  if(state.turn!==HUMAN){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 };

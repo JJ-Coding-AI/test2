@@ -7,7 +7,7 @@ let startTime=0;
 let respectTime=true;
 const TT=new Map();
 // Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
+let TIME_LIMIT=2000; // max thinking time in ms (modifiable)
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
 const KILLER=Array.from({length:16},()=>[null,null]);
@@ -47,6 +47,8 @@ self.onmessage=e=>{
   }else if(d.type==='stop'){
     stop=true;
     postMessage({move:bestMove,time:Date.now()-startTime});
+  }else if(d.type==='config'){
+    if(typeof d.timeLimit==='number')TIME_LIMIT=d.timeLimit;
   }
 };
 function iterative(state){
