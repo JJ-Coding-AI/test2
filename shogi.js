@@ -27,6 +27,7 @@ const logEl=document.getElementById('log');
 let logs=[];
 let timerId=null;
 let thinkStart=0;
+let autoPlay=false;
 function render(){
   boardEl.innerHTML='';
   for(let i=0;i<81;i++){
@@ -75,7 +76,7 @@ function stopThinking(ms){
   statusEl.textContent='思考時間:'+ (ms/1000).toFixed(1)+'秒';
 }
 function selectFrom(i){
-  if(state.turn!==HUMAN)return;
+  if(autoPlay || state.turn!==HUMAN)return;
   const p=state.board[i];
   if(!p||p.c!==HUMAN)return;
   selected={from:i,piece:p};
@@ -83,7 +84,7 @@ function selectFrom(i){
   highlight();
 }
 function selectHand(type,c){
-  if(c!==HUMAN||state.turn!==HUMAN)return;
+  if(autoPlay || c!==HUMAN||state.turn!==HUMAN)return;
   selected={from:-1,type};
   legal=generateLegalMoves(state,c).filter(m=>m.drop===type);
   highlight();
@@ -126,7 +127,7 @@ function addLog(player,m){
   renderLog();
 }
 boardEl.onclick=e=>{
-  if(state.turn!==HUMAN)return;
+  if(autoPlay || state.turn!==HUMAN)return;
   const idx=Number(e.target.closest('.cell')?.dataset.index);
   if(selected){
     const mv=legal.find(m=>m.to===idx);
@@ -154,8 +155,18 @@ function resetGame(){
   logs=[];
   render();
   renderLog();
+  if(autoPlay) aiMove();
 }
 document.getElementById('reset').onclick=resetGame;
+document.getElementById('auto').onclick=()=>{
+  autoPlay=!autoPlay;
+  document.getElementById('auto').textContent=autoPlay?'停止':'AI対局';
+  if(autoPlay) aiMove();
+};
+function aiMove(){
+  startThinking();
+  worker.postMessage({type:'start',state:serialize(state)});
+}
 function playMove(m){
   applyMove(state,m);
   addLog(HUMAN,m);
@@ -308,4 +319,5 @@ worker.onmessage=e=>{
   addLog(1,move);
   state.history.push(move);
   render();
+  if(autoPlay) aiMove();
 };
