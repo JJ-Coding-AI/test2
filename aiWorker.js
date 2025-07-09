@@ -4,125 +4,53 @@ const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 let stop=false;
 let bestMove=null;
 let startTime=0;
-let respectTime=true;
-const TT=new Map();
-// Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
-const MAX_DEPTH=6; // maximum search depth
-const MAX_QUIESCE=4; // capture search depth limit
-const KILLER=Array.from({length:16},()=>[null,null]);
-const HISTORY={};
+// simpler settings for Monte Carlo search
+const TIME_LIMIT=1000; // max thinking time in ms
+const SIM_DEPTH=40; // playout depth
 
-function sameMove(a,b){
-  if(!a||!b)return false;
-  return a.from===b.from&&a.to===b.to&&a.drop===b.drop&&!!a.promote===!!b.promote;
-}
-function moveKey(m){
-  if(m.from>=0)return m.from+"-"+m.to+(m.promote?"p":"");
-  return "D"+m.drop+"-"+m.to;
-}
-function orderMoves(moves,depth){
-  const killers=KILLER[depth]||[];
-  return moves.sort((a,b)=>{
-    const score=(m)=>{
-      let s=0;
-      if(sameMove(m,killers[0]))s+=1000;
-      else if(sameMove(m,killers[1]))s+=990;
-      if(m.capture)s+=50;
-      if(m.promote)s+=20;
-      s+=(HISTORY[moveKey(m)]||0);
-      return s;
-    };
-    return score(b)-score(a);
-  });
-}
 self.onmessage=e=>{
   const d=e.data;
   if(d.type==='start'){
     stop=false;
     bestMove=null;
-    respectTime=true;
-    const time=iterative(d.state);
-    postMessage({move:bestMove,time});
+    startTime=Date.now();
+    bestMove=monteCarlo(d.state);
+    postMessage({move:bestMove,time:Date.now()-startTime});
   }else if(d.type==='stop'){
     stop=true;
     postMessage({move:bestMove,time:Date.now()-startTime});
   }
 };
-function iterative(state){
-  startTime=Date.now();
+
+function monteCarlo(state){
   const legal=generateLegalMoves(state,state.turn);
-  if(legal.length===0){bestMove=null;return Date.now()-startTime;}
-  orderMoves(legal,0);
-  for(let depth=1;depth<=MAX_DEPTH;depth++){
-    const [v,m]=search(state,depth,-1e9,1e9,true);
-    if(stop)break;
-    if(m)bestMove=m;
-    if(Date.now()-startTime>TIME_LIMIT && bestMove)break;
+  if(legal.length===0)return null;
+  const stats=legal.map(m=>({move:m,wins:0,plays:0}));
+  let i=0,bestScore=-Infinity;
+  while(!stop && Date.now()-startTime<TIME_LIMIT){
+    const st=stats[i];
+    const s=clone(state);
+    applyMove(s,st.move);
+    const r=playout(s,state.turn);
+    st.plays++; if(r>0)st.wins++;
+    const score=st.wins/st.plays;
+    if(score>bestScore){bestScore=score;bestMove=st.move;}
+    i=(i+1)%stats.length;
   }
-  if(!bestMove){
-    respectTime=false;
-    const [v,m]=search(state,1,-1e9,1e9,true);
-    bestMove=m;
-    respectTime=true;
-  }
-  return Date.now()-startTime;
+  return bestMove||stats[0].move;
 }
-function search(s,depth,alpha,beta,root){
-  if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))return[evalState(s),null];
-  if(depth===0)return quiesce(s,alpha,beta,0);
-  const key=hashState(s);
-  const tt=TT.get(key);
-  if(tt && tt.depth>=depth)return[tt.score,tt.move];
-  const moves=orderMoves(generateLegalMoves(s,s.turn),depth);
-  let best=null;
-  let pv=false;
-  for(const mv of moves){
-    const ns=clone(s);
-    applyMove(ns,mv);
-    let score;
-    if(pv){
-      score=-search(ns,depth-1,-alpha-1,-alpha,false)[0];
-      if(score>alpha && score<beta){
-        score=-search(ns,depth-1,-beta,-alpha,false)[0];
-      }
-    }else{
-      score=-search(ns,depth-1,-beta,-alpha,true)[0];
-    }
-    if(score>alpha){
-      alpha=score;best=mv;pv=true;
-      if(alpha>=beta){
-        const killers=KILLER[depth];
-        if(!sameMove(mv,killers[0])){killers[1]=killers[0];killers[0]=mv;}
-        HISTORY[moveKey(mv)]=(HISTORY[moveKey(mv)]||0)+depth*depth;
-        break;
-      }
-    }
-    if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))break;
+
+function playout(s,root){
+  let depth=0;
+  while(depth<SIM_DEPTH){
+    const moves=generateLegalMoves(s,s.turn);
+    if(moves.length===0) return s.turn===root? -1:1;
+    const mv=moves[Math.floor(Math.random()*moves.length)];
+    applyMove(s,mv);
+    depth++;
   }
-  TT.set(key,{depth,score:alpha,move:best});
-  if(TT.size>20000)TT.delete(TT.keys().next().value);
-  return[alpha,best];
-}
-function quiesce(s,alpha,beta,depth=0){
-  if(depth>=MAX_QUIESCE) return[evalState(s),null];
-  let stand=evalState(s);
-  if(stand>=beta)return[beta,null];
-  if(alpha<stand)alpha=stand;
-  const moves=orderMoves(generateMoves(s,s.turn).filter(m=>m.capture),depth);
-  let best=null;
-  for(const mv of moves){
-    const ns=clone(s);
-    applyMove(ns,mv);
-    const [v]=quiesce(ns,-beta,-alpha,depth+1);
-    const score=-v;
-    if(score>alpha){
-      alpha=score;best=mv;
-      if(alpha>=beta)break;
-    }
-    if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))break;
-  }
-  return[alpha,best];
+  const val=evalState(s)*(root? -1:1);
+  return val>0?1:-1;
 }
 function evalState(s){
   const val={P:100,L:300,N:300,S:400,G:500,B:700,R:800,K:0,'+P':500,'+L':500,'+N':500,'+S':500,'+B':900,'+R':1000};
