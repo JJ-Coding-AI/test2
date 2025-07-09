@@ -7,7 +7,8 @@ let startTime=0;
 let respectTime=true;
 const TT=new Map();
 // Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
+// Reduced thinking time for quicker play
+const TIME_LIMIT=1000; // max thinking time in ms
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
 const KILLER=Array.from({length:16},()=>[null,null]);
@@ -71,6 +72,12 @@ function iterative(state){
 function search(s,depth,alpha,beta,root){
   if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))return[evalState(s),null];
   if(depth===0)return quiesce(s,alpha,beta,0);
+  if(!root && depth>=2 && !isCheck(s,s.turn)){
+    const ns=clone(s);
+    ns.turn^=1; // null move
+    const score=-search(ns,depth-1-2,-beta,-beta+1,false)[0];
+    if(score>=beta) return [beta,null];
+  }
   const key=hashState(s);
   const tt=TT.get(key);
   if(tt && tt.depth>=depth)return[tt.score,tt.move];

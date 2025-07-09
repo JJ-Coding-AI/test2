@@ -5,7 +5,9 @@ const PIECE_NAMES={
 const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 const PROMOTE={'P':'+P','L':'+L','N':'+N','S':'+S','B':'+B','R':'+R'};
 const UNPROMOTE={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
-const HUMAN=0; // player side
+// Both sides are controlled by the AI
+const HUMAN=-1; // no human player
+const AI_PLAYERS=[true,true];
 function initialState(){
   const b=Array(81).fill(null);
   const s=['L','N','S','G','K','G','S','N','L',null,'R',null,null,null,null,null,'B',null];
@@ -74,6 +76,12 @@ function stopThinking(ms){
   clearInterval(timerId);
   statusEl.textContent='思考時間:'+ (ms/1000).toFixed(1)+'秒';
 }
+function maybeAIMove(){
+  if(AI_PLAYERS[state.turn]){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
+}
 function selectFrom(i){
   if(state.turn!==HUMAN)return;
   const p=state.board[i];
@@ -122,7 +130,7 @@ function renderLog(){
 }
 
 function addLog(player,m){
-  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  logs.push((player===0?'先手:':'後手:')+moveToString(m));
   renderLog();
 }
 boardEl.onclick=e=>{
@@ -157,12 +165,12 @@ function resetGame(){
 }
 document.getElementById('reset').onclick=resetGame;
 function playMove(m){
+  const player=state.turn;
   applyMove(state,m);
-  addLog(HUMAN,m);
+  addLog(player,m);
   render();
   state.history.push(m);
-  startThinking();
-  worker.postMessage({type:'start',state:serialize(state)});
+  maybeAIMove();
 }
 function inZone(color,idx){
   const y=8-Math.floor(idx/9);
@@ -295,17 +303,20 @@ function serialize(s){
 }
 
 render();
+maybeAIMove();
 const worker=new Worker('aiWorker.js');
 worker.onmessage=e=>{
   if(ignore){ignore=false;return;}
   const {move,time}=e.data;
   stopThinking(time);
   if(!move){
-    statusEl.textContent='後手の負けです';
+    statusEl.textContent=(state.turn===0?'先手':'後手')+'の負けです';
     return;
   }
+  const player=state.turn;
   applyMove(state,move);
-  addLog(1,move);
+  addLog(player,move);
   state.history.push(move);
   render();
+  maybeAIMove();
 };
