@@ -4,125 +4,83 @@ const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 let stop=false;
 let bestMove=null;
 let startTime=0;
-let respectTime=true;
-const TT=new Map();
-// Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
-const MAX_DEPTH=6; // maximum search depth
-const MAX_QUIESCE=4; // capture search depth limit
-const KILLER=Array.from({length:16},()=>[null,null]);
-const HISTORY={};
+const TIME_LIMIT=1000;
+const ITERATIONS=300;
+const SIM_DEPTH=60;
 
-function sameMove(a,b){
-  if(!a||!b)return false;
-  return a.from===b.from&&a.to===b.to&&a.drop===b.drop&&!!a.promote===!!b.promote;
+class Node{
+  constructor(state,parent,move){
+    this.state=state;this.parent=parent;this.move=move;
+    this.wins=0;this.visits=0;this.children=[];
+    this.untried=generateLegalMoves(state,state.turn);
+  }
+  ucb(){
+    const c=Math.sqrt(2);
+    return this.wins/this.visits + c*Math.sqrt(Math.log(this.parent.visits)/this.visits);
+  }
+  select(){
+    return this.children.reduce((a,b)=>a.ucb()>b.ucb()?a:b);
+  }
+  addChild(state,move){
+    const n=new Node(state,this,move);this.children.push(n);return n;
+  }
 }
-function moveKey(m){
-  if(m.from>=0)return m.from+"-"+m.to+(m.promote?"p":"");
-  return "D"+m.drop+"-"+m.to;
-}
-function orderMoves(moves,depth){
-  const killers=KILLER[depth]||[];
-  return moves.sort((a,b)=>{
-    const score=(m)=>{
-      let s=0;
-      if(sameMove(m,killers[0]))s+=1000;
-      else if(sameMove(m,killers[1]))s+=990;
-      if(m.capture)s+=50;
-      if(m.promote)s+=20;
-      s+=(HISTORY[moveKey(m)]||0);
-      return s;
-    };
-    return score(b)-score(a);
-  });
-}
+
 self.onmessage=e=>{
   const d=e.data;
   if(d.type==='start'){
     stop=false;
-    bestMove=null;
-    respectTime=true;
-    const time=iterative(d.state);
-    postMessage({move:bestMove,time});
+    startTime=Date.now();
+    bestMove=mcts(d.state);
+    postMessage({move:bestMove,time:Date.now()-startTime});
   }else if(d.type==='stop'){
     stop=true;
-    postMessage({move:bestMove,time:Date.now()-startTime});
   }
 };
-function iterative(state){
-  startTime=Date.now();
-  const legal=generateLegalMoves(state,state.turn);
-  if(legal.length===0){bestMove=null;return Date.now()-startTime;}
-  orderMoves(legal,0);
-  for(let depth=1;depth<=MAX_DEPTH;depth++){
-    const [v,m]=search(state,depth,-1e9,1e9,true);
-    if(stop)break;
-    if(m)bestMove=m;
-    if(Date.now()-startTime>TIME_LIMIT && bestMove)break;
+
+function mcts(state){
+  const root=new Node(clone(state),null,null);
+  const end=Date.now()+TIME_LIMIT;
+  let it=0;
+  while(!stop && Date.now()<end && it<ITERATIONS){
+    let node=root;
+    let s=clone(state);
+    while(node.untried.length===0 && node.children.length>0){
+      node=node.select();
+      applyMove(s,node.move);
+    }
+    if(node.untried.length>0){
+      const idx=Math.floor(Math.random()*node.untried.length);
+      const m=node.untried.splice(idx,1)[0];
+      applyMove(s,m);
+      node=node.addChild(clone(s),m);
+    }
+    let depth=SIM_DEPTH;
+    let simState=clone(s);
+    while(depth-- > 0){
+      const ms=generateLegalMoves(simState,simState.turn);
+      if(ms.length===0)break;
+      const rm=ms[Math.floor(Math.random()*ms.length)];
+      applyMove(simState,rm);
+    }
+    const result=evalResult(simState,state.turn);
+    while(node){
+      node.visits++;node.wins+=result;node=node.parent;
+    }
+    it++;
   }
-  if(!bestMove){
-    respectTime=false;
-    const [v,m]=search(state,1,-1e9,1e9,true);
-    bestMove=m;
-    respectTime=true;
-  }
-  return Date.now()-startTime;
-}
-function search(s,depth,alpha,beta,root){
-  if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))return[evalState(s),null];
-  if(depth===0)return quiesce(s,alpha,beta,0);
-  const key=hashState(s);
-  const tt=TT.get(key);
-  if(tt && tt.depth>=depth)return[tt.score,tt.move];
-  const moves=orderMoves(generateLegalMoves(s,s.turn),depth);
   let best=null;
-  let pv=false;
-  for(const mv of moves){
-    const ns=clone(s);
-    applyMove(ns,mv);
-    let score;
-    if(pv){
-      score=-search(ns,depth-1,-alpha-1,-alpha,false)[0];
-      if(score>alpha && score<beta){
-        score=-search(ns,depth-1,-beta,-alpha,false)[0];
-      }
-    }else{
-      score=-search(ns,depth-1,-beta,-alpha,true)[0];
-    }
-    if(score>alpha){
-      alpha=score;best=mv;pv=true;
-      if(alpha>=beta){
-        const killers=KILLER[depth];
-        if(!sameMove(mv,killers[0])){killers[1]=killers[0];killers[0]=mv;}
-        HISTORY[moveKey(mv)]=(HISTORY[moveKey(mv)]||0)+depth*depth;
-        break;
-      }
-    }
-    if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))break;
+  for(const c of root.children){
+    if(!best || c.visits>best.visits)best=c;
   }
-  TT.set(key,{depth,score:alpha,move:best});
-  if(TT.size>20000)TT.delete(TT.keys().next().value);
-  return[alpha,best];
+  return best?best.move:null;
 }
-function quiesce(s,alpha,beta,depth=0){
-  if(depth>=MAX_QUIESCE) return[evalState(s),null];
-  let stand=evalState(s);
-  if(stand>=beta)return[beta,null];
-  if(alpha<stand)alpha=stand;
-  const moves=orderMoves(generateMoves(s,s.turn).filter(m=>m.capture),depth);
-  let best=null;
-  for(const mv of moves){
-    const ns=clone(s);
-    applyMove(ns,mv);
-    const [v]=quiesce(ns,-beta,-alpha,depth+1);
-    const score=-v;
-    if(score>alpha){
-      alpha=score;best=mv;
-      if(alpha>=beta)break;
-    }
-    if(stop||(respectTime && Date.now()-startTime>TIME_LIMIT))break;
-  }
-  return[alpha,best];
+
+function evalResult(s,player){
+  if(isMate(s,player))return 0;
+  if(isMate(s,player^1))return 1;
+  const val=evalState(s)*(player? -1:1);
+  return 0.5+Math.tanh(val/2000)/2;
 }
 function evalState(s){
   const val={P:100,L:300,N:300,S:400,G:500,B:700,R:800,K:0,'+P':500,'+L':500,'+N':500,'+S':500,'+B':900,'+R':1000};
