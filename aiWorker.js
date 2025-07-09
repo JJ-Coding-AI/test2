@@ -10,6 +10,7 @@ const TT=new Map();
 const TIME_LIMIT=2000; // max thinking time in ms
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
+const NULL_MOVE_R=2; // reduction for null move pruning
 const KILLER=Array.from({length:16},()=>[null,null]);
 const HISTORY={};
 
@@ -74,6 +75,16 @@ function search(s,depth,alpha,beta,root){
   const key=hashState(s);
   const tt=TT.get(key);
   if(tt && tt.depth>=depth)return[tt.score,tt.move];
+  // Null move pruning to skip unpromising branches
+  if(!root && depth>2 && !isCheck(s,s.turn)){
+    const ns=clone(s);
+    ns.turn^=1; // pass move
+    const [v]=search(ns,depth-1-NULL_MOVE_R,-beta,-beta+1,false);
+    if(-v>=beta){
+      TT.set(key,{depth,score:beta,move:null});
+      return[beta,null];
+    }
+  }
   const moves=orderMoves(generateLegalMoves(s,s.turn),depth);
   let best=null;
   let pv=false;
