@@ -7,7 +7,8 @@ let startTime=0;
 let respectTime=true;
 const TT=new Map();
 // Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
+// maximum thinking time in milliseconds
+const TIME_LIMIT=15000;
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
 const KILLER=Array.from({length:16},()=>[null,null]);
