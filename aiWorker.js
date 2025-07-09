@@ -7,7 +7,8 @@ let startTime=0;
 let respectTime=true;
 const TT=new Map();
 // Tune search to respond quicker
-const TIME_LIMIT=2000; // max thinking time in ms
+const TIME_LIMIT=1000; // max thinking time in ms
+const ASP_WINDOW=100; // aspiration window size
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
 const KILLER=Array.from({length:16},()=>[null,null]);
@@ -54,8 +55,14 @@ function iterative(state){
   const legal=generateLegalMoves(state,state.turn);
   if(legal.length===0){bestMove=null;return Date.now()-startTime;}
   orderMoves(legal,0);
+  let guess=evalState(state);
   for(let depth=1;depth<=MAX_DEPTH;depth++){
-    const [v,m]=search(state,depth,-1e9,1e9,true);
+    let alpha=guess-ASP_WINDOW;
+    let beta=guess+ASP_WINDOW;
+    let [v,m]=search(state,depth,alpha,beta,true);
+    if(v<=alpha) [v,m]=search(state,depth,-1e9,beta,true);
+    else if(v>=beta) [v,m]=search(state,depth,alpha,1e9,true);
+    guess=v;
     if(stop)break;
     if(m)bestMove=m;
     if(Date.now()-startTime>TIME_LIMIT && bestMove)break;
