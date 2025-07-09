@@ -5,7 +5,8 @@ const PIECE_NAMES={
 const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 const PROMOTE={'P':'+P','L':'+L','N':'+N','S':'+S','B':'+B','R':'+R'};
 const UNPROMOTE={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
-const HUMAN=0; // player side
+let HUMAN=0; // player side, -1 when AI vs AI
+let aiMode=false;
 function initialState(){
   const b=Array(81).fill(null);
   const s=['L','N','S','G','K','G','S','N','L',null,'R',null,null,null,null,null,'B',null];
@@ -16,9 +17,10 @@ function initialState(){
   b[64]={type:'B',c:0}; b[70]={type:'R',c:0};
   const t=['L','N','S','G','K','G','S','N','L'];
   for(let i=72;i<81;i++)b[i]={type:t[i-72],c:0};
-  return {board:b,hand:[{},{}],turn:0,history:[]};
+  return {board:b,hand:[{},{}],turn:0,history:[],posHistory:[],posCounts:{}};
 }
 let state=initialState();
+updatePosition();
 const boardEl=document.getElementById('board');
 const handEls=[document.getElementById('hand0'),document.getElementById('hand1')];
 const statusEl=document.getElementById('status');
@@ -122,7 +124,7 @@ function renderLog(){
 }
 
 function addLog(player,m){
-  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  logs.push((player===0?'先手:':'後手:')+moveToString(m));
   renderLog();
 }
 boardEl.onclick=e=>{
@@ -139,7 +141,7 @@ boardEl.onclick=e=>{
 document.getElementById('undo').onclick=()=>{
   if(state.history.length<2)return;
   ignore=true;
-  worker.postMessage({type:'stop'});
+  workers.forEach(w=>w.postMessage({type:'stop'}));
   stopThinking(Date.now()-thinkStart);
   undo();undo();
   render();
@@ -148,21 +150,50 @@ document.getElementById('undo').onclick=()=>{
 
 function resetGame(){
   ignore=true;
-  worker.postMessage({type:'stop'});
+  workers.forEach(w=>w.postMessage({type:'stop'}));
   stopThinking(Date.now()-thinkStart);
   state=initialState();
+  updatePosition();
   logs=[];
   render();
   renderLog();
+  if(aiMode && state.turn!==HUMAN){
+    startThinking();
+    currentWorker=workers[state.turn];
+    currentWorker.postMessage({type:'start',state:serialize(state),posCounts:state.posCounts});
+  }
 }
 document.getElementById('reset').onclick=resetGame;
+document.getElementById('toggle').onclick=()=>{
+  ignore=true;
+  workers.forEach(w=>w.postMessage({type:'stop'}));
+  stopThinking(Date.now()-thinkStart);
+  aiMode=!aiMode;
+  const btn=document.getElementById('toggle');
+  if(aiMode){
+    HUMAN=-1;
+    btn.textContent='人間対AI';
+  }else{
+    HUMAN=0;
+    btn.textContent='AI対AI';
+  }
+  if(state.turn!==HUMAN){
+    startThinking();
+    currentWorker=workers[state.turn];
+    currentWorker.postMessage({type:'start',state:serialize(state),posCounts:state.posCounts});
+  }
+};
 function playMove(m){
   applyMove(state,m);
   addLog(HUMAN,m);
   render();
+  updatePosition();
   state.history.push(m);
-  startThinking();
-  worker.postMessage({type:'start',state:serialize(state)});
+  if(state.turn!==HUMAN){
+    startThinking();
+    currentWorker=workers[state.turn];
+    currentWorker.postMessage({type:'start',state:serialize(state),posCounts:state.posCounts});
+  }
 }
 function inZone(color,idx){
   const y=8-Math.floor(idx/9);
@@ -204,6 +235,8 @@ function undo(){
     state.board[m.to]=null;
     state.hand[state.turn][m.drop]=(state.hand[state.turn][m.drop]||0)+1;
   }
+  const key=state.posHistory.pop();
+  if(key)state.posCounts[key]--;
   logs.pop();
 }
 function generateLegalMoves(s,color){
@@ -291,21 +324,47 @@ function clone(s){
   return {board:s.board.map(p=>p?{type:p.type,c:p.c}:null),hand:[{...s.hand[0]},{...s.hand[1]}],turn:s.turn};
 }
 function serialize(s){
-  return {board:s.board.map(p=>p?{t:p.type,c:p.c}:null),hand:s.hand.map(h=>({...h})),turn:s.turn};
+  return {board:s.board.map(p=>p?{t:p.type,c:p.c}:null),hand:s.hand.map(h=>({...h})),turn:s.turn,posCounts:s.posCounts};
+}
+function positionKey(s){
+  let str=s.turn;
+  for(let i=0;i<81;i++){
+    const p=s.board[i];
+    if(p)str+=p.type+p.c;else str+='.';
+  }
+  str+='|'+JSON.stringify(s.hand[0])+JSON.stringify(s.hand[1]);
+  return str;
+}
+function updatePosition(){
+  const k=positionKey(state);
+  state.posHistory.push(k);
+  state.posCounts[k]=(state.posCounts[k]||0)+1;
+  if(state.posCounts[k]>=4){
+    statusEl.textContent='\u5343\u65e5\u624b\u3067\u3059';
+    ignore=true;
+    workers.forEach(w=>w.postMessage({type:'stop'}));
+  }
 }
 
 render();
-const worker=new Worker('aiWorker.js');
-worker.onmessage=e=>{
+const workers=[new Worker('aiWorker.js'),new Worker('aiWorker.js')];
+let currentWorker=workers[0];
+workers.forEach(w=>w.onmessage=e=>{
   if(ignore){ignore=false;return;}
   const {move,time}=e.data;
   stopThinking(time);
   if(!move){
-    statusEl.textContent='後手の負けです';
+    statusEl.textContent=(state.turn? '後手':'先手')+'の負けです';
     return;
   }
   applyMove(state,move);
-  addLog(1,move);
+  addLog(state.turn^1,move);
+  updatePosition();
   state.history.push(move);
   render();
-};
+  if(state.turn!==HUMAN){
+    startThinking();
+    currentWorker=workers[state.turn];
+    currentWorker.postMessage({type:'start',state:serialize(state),posCounts:state.posCounts});
+  }
+});

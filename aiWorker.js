@@ -12,6 +12,8 @@ const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
 const KILLER=Array.from({length:16},()=>[null,null]);
 const HISTORY={};
+let posCounts={};
+const REPEAT_PENALTY=1000;
 
 function sameMove(a,b){
   if(!a||!b)return false;
@@ -42,6 +44,7 @@ self.onmessage=e=>{
     stop=false;
     bestMove=null;
     respectTime=true;
+    posCounts=d.posCounts||{};
     const time=iterative(d.state);
     postMessage({move:bestMove,time});
   }else if(d.type==='stop'){
@@ -140,6 +143,8 @@ function evalState(s){
     const h=s.hand[c];
     for(let k in h)v+=(c? -1:1)*val[k]*(h[k]||0);
   }
+  const key=hashState(s);
+  if(posCounts[key])v-=REPEAT_PENALTY*posCounts[key];
   return v;
 }
 function hashState(s){
