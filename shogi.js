@@ -5,7 +5,8 @@ const PIECE_NAMES={
 const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 const PROMOTE={'P':'+P','L':'+L','N':'+N','S':'+S','B':'+B','R':'+R'};
 const UNPROMOTE={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
-const HUMAN=0; // player side
+let humanSide=0; // 0:先手が人,1:後手が人,null:AI同士
+let aiVsAi=false;
 function initialState(){
   const b=Array(81).fill(null);
   const s=['L','N','S','G','K','G','S','N','L',null,'R',null,null,null,null,null,'B',null];
@@ -75,15 +76,15 @@ function stopThinking(ms){
   statusEl.textContent='思考時間:'+ (ms/1000).toFixed(1)+'秒';
 }
 function selectFrom(i){
-  if(state.turn!==HUMAN)return;
+  if(state.turn!==humanSide)return;
   const p=state.board[i];
-  if(!p||p.c!==HUMAN)return;
+  if(!p||p.c!==humanSide)return;
   selected={from:i,piece:p};
   legal=generateLegalMoves(state,p.c).filter(m=>m.from===i);
   highlight();
 }
 function selectHand(type,c){
-  if(c!==HUMAN||state.turn!==HUMAN)return;
+  if(c!==humanSide||state.turn!==humanSide)return;
   selected={from:-1,type};
   legal=generateLegalMoves(state,c).filter(m=>m.drop===type);
   highlight();
@@ -122,11 +123,11 @@ function renderLog(){
 }
 
 function addLog(player,m){
-  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  logs.push((player===0?'先手:':'後手:')+moveToString(m));
   renderLog();
 }
 boardEl.onclick=e=>{
-  if(state.turn!==HUMAN)return;
+  if(state.turn!==humanSide)return;
   const idx=Number(e.target.closest('.cell')?.dataset.index);
   if(selected){
     const mv=legal.find(m=>m.to===idx);
@@ -152,13 +153,31 @@ function resetGame(){
   stopThinking(Date.now()-thinkStart);
   state=initialState();
   logs=[];
+  humanSide=0;
+  aiVsAi=false;
   render();
   renderLog();
 }
 document.getElementById('reset').onclick=resetGame;
+document.getElementById('aiToggle').onclick=function(){
+  if(aiVsAi){
+    aiVsAi=false;
+    humanSide=0;
+    this.textContent='AI対AI開始';
+    resetGame();
+  }else{
+    resetGame();
+    aiVsAi=true;
+    humanSide=null;
+    this.textContent='AI対AI停止';
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
+};
 function playMove(m){
+  const player=state.turn;
   applyMove(state,m);
-  addLog(HUMAN,m);
+  addLog(player,m);
   render();
   state.history.push(m);
   startThinking();
@@ -301,11 +320,16 @@ worker.onmessage=e=>{
   const {move,time}=e.data;
   stopThinking(time);
   if(!move){
-    statusEl.textContent='後手の負けです';
+    statusEl.textContent=(state.turn?'後手':'先手')+'の負けです';
     return;
   }
+  const player=state.turn;
   applyMove(state,move);
-  addLog(1,move);
+  addLog(player,move);
   state.history.push(move);
   render();
+  if(humanSide===null || state.turn!==humanSide){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 };

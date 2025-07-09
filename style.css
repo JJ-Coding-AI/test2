@@ -12,6 +12,7 @@ body {
   margin:4px auto;
 }
 #status{margin-left:8px;}
+#aiToggle{margin-left:4px;}
 .board {
   background:#deb887;
   display:grid;
