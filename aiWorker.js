@@ -10,8 +10,11 @@ const TT=new Map();
 const TIME_LIMIT=2000; // max thinking time in ms
 const MAX_DEPTH=6; // maximum search depth
 const MAX_QUIESCE=4; // capture search depth limit
+const NULL_MOVE_R=2; // reduction for null move pruning
 const KILLER=Array.from({length:16},()=>[null,null]);
 const HISTORY={};
+const ROLLOUTS=20; // simulations per move for Monte Carlo
+const ROLLOUT_DEPTH=40; // playout length
 
 function sameMove(a,b){
   if(!a||!b)return false;
@@ -42,13 +45,48 @@ self.onmessage=e=>{
     stop=false;
     bestMove=null;
     respectTime=true;
-    const time=iterative(d.state);
+    const time=monteCarlo(d.state);
     postMessage({move:bestMove,time});
   }else if(d.type==='stop'){
     stop=true;
     postMessage({move:bestMove,time:Date.now()-startTime});
   }
 };
+
+function monteCarlo(state){
+  startTime=Date.now();
+  const rootTurn=state.turn;
+  const legal=generateLegalMoves(state,rootTurn);
+  if(legal.length===0){bestMove=null;return Date.now()-startTime;}
+  let best=null,bestScore=-Infinity;
+  for(const mv of legal){
+    let score=0;
+    for(let i=0;i<ROLLOUTS;i++){
+      const ns=clone(state);
+      applyMove(ns,mv);
+      score+=rollout(ns,rootTurn);
+      if(Date.now()-startTime>TIME_LIMIT){stop=true;break;}
+      if(stop)break;
+    }
+    if(score>bestScore){bestScore=score;best=mv;}
+    if(stop)break;
+  }
+  bestMove=best;
+  return Date.now()-startTime;
+}
+
+function rollout(s,rootTurn){
+  for(let d=0; d<ROLLOUT_DEPTH; d++){
+    const moves=generateLegalMoves(s,s.turn);
+    if(moves.length===0){
+      return s.turn===rootTurn? -10000:10000;
+    }
+    const m=moves[Math.floor(Math.random()*moves.length)];
+    applyMove(s,m);
+  }
+  const v=evalState(s);
+  return rootTurn? -v:v;
+}
 function iterative(state){
   startTime=Date.now();
   const legal=generateLegalMoves(state,state.turn);
@@ -74,6 +112,16 @@ function search(s,depth,alpha,beta,root){
   const key=hashState(s);
   const tt=TT.get(key);
   if(tt && tt.depth>=depth)return[tt.score,tt.move];
+  // Null move pruning to skip unpromising branches
+  if(!root && depth>2 && !isCheck(s,s.turn)){
+    const ns=clone(s);
+    ns.turn^=1; // pass move
+    const [v]=search(ns,depth-1-NULL_MOVE_R,-beta,-beta+1,false);
+    if(-v>=beta){
+      TT.set(key,{depth,score:beta,move:null});
+      return[beta,null];
+    }
+  }
   const moves=orderMoves(generateLegalMoves(s,s.turn),depth);
   let best=null;
   let pv=false;
