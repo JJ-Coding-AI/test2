@@ -5,7 +5,7 @@ const PIECE_NAMES={
 const PROMOTABLE={P:1,L:1,N:1,S:1,B:1,R:1};
 const PROMOTE={'P':'+P','L':'+L','N':'+N','S':'+S','B':'+B','R':'+R'};
 const UNPROMOTE={'+P':'P','+L':'L','+N':'N','+S':'S','+B':'B','+R':'R'};
-const HUMAN=0; // player side
+let humanSide=0; // 0: you play first, -1: AI vs AI
 function initialState(){
   const b=Array(81).fill(null);
   const s=['L','N','S','G','K','G','S','N','L',null,'R',null,null,null,null,null,'B',null];
@@ -24,9 +24,14 @@ const handEls=[document.getElementById('hand0'),document.getElementById('hand1')
 const statusEl=document.getElementById('status');
 const moveEl=document.getElementById('moveCount');
 const logEl=document.getElementById('log');
+const modeEl=document.getElementById('mode');
 let logs=[];
 let timerId=null;
 let thinkStart=0;
+modeEl.onchange=()=>{
+  humanSide=modeEl.value==='ai'? -1:0;
+  resetGame();
+};
 function render(){
   boardEl.innerHTML='';
   for(let i=0;i<81;i++){
@@ -75,15 +80,15 @@ function stopThinking(ms){
   statusEl.textContent='思考時間:'+ (ms/1000).toFixed(1)+'秒';
 }
 function selectFrom(i){
-  if(state.turn!==HUMAN)return;
+  if(humanSide<0||state.turn!==humanSide)return;
   const p=state.board[i];
-  if(!p||p.c!==HUMAN)return;
+  if(!p||p.c!==humanSide)return;
   selected={from:i,piece:p};
   legal=generateLegalMoves(state,p.c).filter(m=>m.from===i);
   highlight();
 }
 function selectHand(type,c){
-  if(c!==HUMAN||state.turn!==HUMAN)return;
+  if(humanSide<0||c!==humanSide||state.turn!==humanSide)return;
   selected={from:-1,type};
   legal=generateLegalMoves(state,c).filter(m=>m.drop===type);
   highlight();
@@ -122,11 +127,11 @@ function renderLog(){
 }
 
 function addLog(player,m){
-  logs.push((player===HUMAN?'先手:':'後手:')+moveToString(m));
+  logs.push((player===0?'先手:':'後手:')+moveToString(m));
   renderLog();
 }
 boardEl.onclick=e=>{
-  if(state.turn!==HUMAN)return;
+  if(humanSide<0||state.turn!==humanSide)return;
   const idx=Number(e.target.closest('.cell')?.dataset.index);
   if(selected){
     const mv=legal.find(m=>m.to===idx);
@@ -154,15 +159,21 @@ function resetGame(){
   logs=[];
   render();
   renderLog();
+  if(state.turn!==humanSide){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 }
 document.getElementById('reset').onclick=resetGame;
 function playMove(m){
   applyMove(state,m);
-  addLog(HUMAN,m);
+  addLog(humanSide,m);
   render();
   state.history.push(m);
-  startThinking();
-  worker.postMessage({type:'start',state:serialize(state)});
+  if(state.turn!==humanSide){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 }
 function inZone(color,idx){
   const y=8-Math.floor(idx/9);
@@ -304,8 +315,18 @@ worker.onmessage=e=>{
     statusEl.textContent='後手の負けです';
     return;
   }
+  const aiColor=state.turn;
   applyMove(state,move);
-  addLog(1,move);
+  addLog(aiColor,move);
   state.history.push(move);
   render();
+  if(state.turn!==humanSide){
+    startThinking();
+    worker.postMessage({type:'start',state:serialize(state)});
+  }
 };
+
+if(state.turn!==humanSide){
+  startThinking();
+  worker.postMessage({type:'start',state:serialize(state)});
+}
